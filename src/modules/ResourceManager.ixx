@@ -95,7 +95,7 @@ export namespace Std {
     };
 
     template<typename T>
-    UniqueHolder<T> makeUnique(auto &&... args) {
+    UniqueHolder<T> makeUniqueHolder(auto &&... args) {
         return UniqueHolder<T>::makeUnique(std::forward<decltype(args)>(args)...);
     }
 };
