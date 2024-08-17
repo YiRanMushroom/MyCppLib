@@ -32,17 +32,15 @@ export namespace Std {
 
         UniqueHolder(UniqueHolder &) = delete;
 
-        UniqueHolder(UniqueHolder &&other) noexcept : m_Resource{std::move(other.m_Resource)}, m_HoldsResource{true} {
-            assert(other.m_HoldsResource);
-            other.m_HoldsResource = false;
+        UniqueHolder(UniqueHolder &&other) noexcept : m_Resource{other.drop()}, m_HoldsResource{true} {
         }
 
         UniqueHolder &operator=(UniqueHolder &) = delete;
 
         UniqueHolder &operator=(UniqueHolder &&other) noexcept {
             if (this != &other) {
-                other.m_HoldsResource = false;
-                m_Resource = std::move(other.m_Resource);
+                m_Resource.destroy();
+                m_Resource = other.drop();
             }
             return *this;
         }
@@ -141,7 +139,6 @@ export namespace Std {
 
         VirtualUniqueHolder &operator=(VirtualUniqueHolder &&other) noexcept {
             if (this != &other) {
-                other.m_HoldsResource = false;
                 m_Resource->destroy();
                 m_Resource = other.drop();
             }
