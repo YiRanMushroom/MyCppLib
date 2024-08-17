@@ -131,7 +131,7 @@ export namespace Std {
             other.m_HoldsResource = false;
         }
 
-        template<typename U>
+        template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
         VirtualUniqueHolder(VirtualUniqueHolder<U> &&other) noexcept : m_Resource{other.drop()}, m_HoldsResource{true} {
         }
 
@@ -145,7 +145,7 @@ export namespace Std {
             return *this;
         }
 
-        template<typename U>
+        template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
         VirtualUniqueHolder &operator=(VirtualUniqueHolder<U> &&other) noexcept {
             if (this != &other) {
                 m_Resource->destroy();
