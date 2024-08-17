@@ -6,10 +6,20 @@ export module ResourceManager;
 
 import std.compat;
 
-
 export namespace Std {
     template<typename T>
+    // T should be trivially copyable, trivially move constructible and should have a non-trivial destructor
     class UniqueHolder {
+
+#pragma region Asserts
+#ifdef __cpp_concepts
+    static_assert(requires(T* t) {
+        t->destroy();
+    }, "Template argument either does not have a destroy method or it is not accessible");
+#endif
+#pragma endregion
+
+    private:
         T m_Resource;
 
         bool m_HoldsResource;
@@ -20,7 +30,6 @@ export namespace Std {
         UniqueHolder(UniqueHolder &&other) noexcept : m_Resource{std::move(other.m_Resource)}, m_HoldsResource{true} {
             assert(other.m_HoldsResource);
             other.m_HoldsResource = false;
-            // std::cout << "UniqueHolder move constructor" << std::endl;
         }
 
         UniqueHolder &operator=(UniqueHolder &) = delete;
