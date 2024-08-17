@@ -8,7 +8,7 @@ import std.compat;
 
 export namespace Std {
     template<typename T>
-    // T should be trivially copyable, trivially move constructible and should have a non-trivial destructor
+    // T should be trivially copyable, trivially move constructible and should have a trivial destructor
     class UniqueHolder {
 #pragma region Asserts
 #ifdef __cpp_concepts
@@ -30,12 +30,12 @@ export namespace Std {
             return std::move(m_Resource);
         }
 
-        UniqueHolder(UniqueHolder &) = delete;
+        UniqueHolder(const UniqueHolder &) = delete;
 
         UniqueHolder(UniqueHolder &&other) noexcept : m_Resource{other.drop()}, m_HoldsResource{true} {
         }
 
-        UniqueHolder &operator=(UniqueHolder &) = delete;
+        UniqueHolder &operator=(const UniqueHolder &) = delete;
 
         UniqueHolder &operator=(UniqueHolder &&other) noexcept {
             if (this != &other) {
@@ -81,11 +81,13 @@ export namespace Std {
         }
 
     private:
-        template<typename... Args
-            // , typename = std::enable_if_t<!std::is_same_v<std::decay_t<Args>..., UniqueHolder>, void> // Don't think this is necessary
+        template<typename First, typename... Args
+            , typename = std::enable_if_t<!std::is_same_v<std::decay_t<First>, UniqueHolder>>
+            // Don't think this is necessary
         >
-        explicit UniqueHolder(Args &&... args) : m_Resource(std::forward<decltype(args)>(args)...),
-                                                 m_HoldsResource(true) {
+        explicit UniqueHolder(First &&first, Args &&... args) : m_Resource(std::forward<First>(first),
+                                                                           std::forward<decltype(args)>(args)...),
+                                                                m_HoldsResource(true) {
         }
 
     public:
@@ -102,7 +104,7 @@ export namespace Std {
 
 
     template<typename T>
-    // T should be trivially copyable, trivially move constructible and should have a non-trivial destructor
+    // T should be trivially copyable, trivially move constructible and should have a trivial destructor
     class VirtualUniqueHolder {
 #pragma region Asserts
 #ifdef __cpp_concepts
@@ -124,18 +126,19 @@ export namespace Std {
             return std::move(m_Resource);
         }
 
-        VirtualUniqueHolder(VirtualUniqueHolder &) = delete;
+        VirtualUniqueHolder(const VirtualUniqueHolder &) = delete;
 
-        VirtualUniqueHolder(VirtualUniqueHolder &&other) noexcept : m_Resource{std::move(other.m_Resource)}, m_HoldsResource{true} {
+        VirtualUniqueHolder(VirtualUniqueHolder &&other) noexcept : m_Resource{std::move(other.m_Resource)},
+                                                                    m_HoldsResource{true} {
             assert(other.m_HoldsResource);
             other.m_HoldsResource = false;
         }
 
-        template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
+        template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U> > >
         VirtualUniqueHolder(VirtualUniqueHolder<U> &&other) noexcept : m_Resource{other.drop()}, m_HoldsResource{true} {
         }
 
-        VirtualUniqueHolder &operator=(VirtualUniqueHolder &) = delete;
+        VirtualUniqueHolder &operator=(const VirtualUniqueHolder &) = delete;
 
         VirtualUniqueHolder &operator=(VirtualUniqueHolder &&other) noexcept {
             if (this != &other) {
@@ -145,7 +148,7 @@ export namespace Std {
             return *this;
         }
 
-        template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U>>>
+        template<typename U, typename = std::enable_if_t<std::is_base_of_v<T, U> > >
         VirtualUniqueHolder &operator=(VirtualUniqueHolder<U> &&other) noexcept {
             if (this != &other) {
                 m_Resource->destroy();
@@ -190,11 +193,14 @@ export namespace Std {
         }
 
     private:
-        template<typename... Args
-            // , typename = std::enable_if_t<!std::is_same_v<std::decay_t<Args>..., UniqueHolder>, void> // Don't think this is necessary
+        template<typename First, typename... Args
+            , typename = std::enable_if_t<!std::is_same_v<std::decay_t<First>, VirtualUniqueHolder>>
+            // Don't think this is necessary
         >
-        explicit VirtualUniqueHolder(Args &&... args) : m_Resource(std::make_unique<T>(std::forward<decltype(args)>(args)...)),
-                                                 m_HoldsResource(true) {
+        explicit VirtualUniqueHolder(First &&first, Args &&... args) : m_Resource(std::make_unique<T>(
+                                                                           std::forward<First>(first),
+                                                                           std::forward<decltype(args)>(args)...)),
+                                                                       m_HoldsResource(true) {
         }
 
     public:
