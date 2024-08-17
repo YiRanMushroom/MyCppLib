@@ -78,13 +78,11 @@ export namespace Std {
         }
 
     private:
-        UniqueHolder() : m_Resource{}, m_HoldsResource{true} {
-        }
 
-        template<typename... Args,
-        typename = std::enable_if_t<!std::is_same_v<std::decay_t<Args>..., UniqueHolder>, void> // Don't think this is necessary
+        template<typename... Args
+        // , typename = std::enable_if_t<!std::is_same_v<std::decay_t<Args>..., UniqueHolder>, void> // Don't think this is necessary
         >
-        UniqueHolder(Args&&... args) : m_Resource{std::forward<decltype(args)>(args)...}, m_HoldsResource{true} {
+        explicit UniqueHolder(Args&&... args) : m_Resource(std::forward<decltype(args)>(args)...), m_HoldsResource(true) {
         }
 
     public:

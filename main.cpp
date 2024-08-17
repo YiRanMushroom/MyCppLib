@@ -26,7 +26,7 @@ struct Int {
 int main() {
     std::cout << "Hello, World!" << std::endl;
 
-    Std::UniqueHolder<Int> holder = Std::makeUnique<Int>(0);
+    Std::UniqueHolder<Int> holder = Std::makeUniqueHolder<Int>(0);
 
     auto holder2 = std::move(holder);
 
