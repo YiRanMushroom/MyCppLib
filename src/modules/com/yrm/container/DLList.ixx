@@ -30,8 +30,8 @@ export namespace Std {
 
     private:
         class Node {
-            std::shared_ptr<Node > m_Next;
-            std::weak_ptr<Node > m_Prev;
+            std::shared_ptr<Node> m_Next;
+            std::weak_ptr<Node> m_Prev;
             std::shared_ptr<T> m_Value;
             DLList<T> *m_List;
 
@@ -50,23 +50,24 @@ export namespace Std {
                 return m_Value;
             }
 
-            T& operator*() {
+            T &operator*() {
                 return *m_Value;
             }
 
-            const T& operator*() const {
+            const T &operator*() const {
                 return *m_Value;
             }
 
-            T& getValue() {
+            T &getValue() {
                 return *m_Value;
             }
 
-            const T& getValue() const {
+            const T &getValue() const {
                 return *m_Value;
             }
 
-            void remove() {
+            std::shared_ptr<T> pop() {
+                auto node = getThis();
                 if (auto prev = m_Prev.lock()) {
                     prev->m_Next = m_Next;
                 } else {
@@ -80,14 +81,22 @@ export namespace Std {
                 }
 
                 --(m_List->m_Size);
+
+                return node->m_Value;
             }
 
+        private:
             std::shared_ptr<Node> getThis() const {
                 if (m_Prev.lock()) {
                     return m_Prev.lock()->m_Next;
                 } else {
                     return m_List->m_Head;
                 }
+            }
+
+        public:
+            std::shared_ptr<Node> share() const {
+                return getThis();
             }
 
             std::shared_ptr<Node> getNext() const {
@@ -98,7 +107,7 @@ export namespace Std {
                 return m_Prev.lock();
             }
 
-            void insertAfter(const std::shared_ptr<T> &value) {
+            std::shared_ptr<Node> insertAfter(const std::shared_ptr<T> &value) {
                 auto newNode = std::make_shared<Node>(m_List);
                 newNode->m_Value = value;
                 newNode->m_Next = m_Next;
@@ -109,9 +118,11 @@ export namespace Std {
                 } else {
                     m_List->m_Tail = newNode;
                 }
+
+                return newNode;
             }
 
-            void insertBefore(const std::shared_ptr<T> &value) {
+            std::shared_ptr<Node> insertBefore(const std::shared_ptr<T> &value) {
                 auto newNode = std::make_shared<Node>(m_List);
                 newNode->m_Value = value;
                 newNode->m_Prev = m_Prev;
@@ -122,46 +133,68 @@ export namespace Std {
                     m_List->m_Head = newNode;
                 }
                 m_Prev = newNode;
+
+                return newNode;
             }
 
-            void emplaceAfter(auto &&... args) {
-                insertAfter(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+            std::shared_ptr<Node> emplaceAfter(auto &&... args) {
+                return insertAfter(std::make_shared<T>(std::forward<decltype(args)>(args)...));
             }
 
-            void emplaceBefore(auto &&... args) {
-                insertBefore(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+            std::shared_ptr<Node> emplaceBefore(auto &&... args) {
+                return std::make_shared<T>(std::forward<decltype(args)>(args)...);
+            }
+
+            ~Node() {
+                std::cout << "Node destroyed" << std::endl;
             }
         };
 
     public:
-        void insertFront(const std::shared_ptr<T> value) {
-            if (this->size())
-                this->getHead()->insertBefore(value);
-            else {
+        std::shared_ptr<Node> insertFront(const std::shared_ptr<T> value) {
+            if (this->size()) {
+                return this->m_Head->insertBefore(value);
+            } else {
                 this->m_Head = std::make_shared<Node>(this);
                 this->m_Head->m_Value = value;
                 this->m_Tail = this->m_Head;
                 ++(this->m_Size);
+                return this->m_Head;
             }
         }
 
-        void insertBack(const std::shared_ptr<T> value) {
-            if (this->size())
-                this->getTail()->insertAfter(value);
-            else {
+        std::shared_ptr<Node> insertBack(const std::shared_ptr<T> value) {
+            if (this->size()) {
+                return this->getTail()->insertAfter(value);
+            } else {
                 this->m_Head = std::make_shared<Node>(this);
                 this->m_Head->m_Value = value;
                 this->m_Tail = this->m_Head;
                 ++(this->m_Size);
+                return this->m_Head;
             }
         }
 
-        void emplaceFront(auto &&... args) {
-            insertFront(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+        std::shared_ptr<Node> emplaceFront(auto &&... args) {
+            return insertFront(std::make_shared<T>(std::forward<decltype(args)>(args)...));
         }
 
-        void emplaceBack(auto &&... args) {
-            insertBack(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+        std::shared_ptr<Node> emplaceBack(auto &&... args) {
+            return insertBack(std::make_shared<T>(std::forward<decltype(args)>(args)...));
+        }
+
+        std::shared_ptr<T> popFront() {
+            if (this->size()) {
+                return this->m_Head->pop();
+            }
+            return nullptr;
+        }
+
+        std::shared_ptr<T> popBack() {
+            if (this->size()) {
+                return this->getTail()->pop();
+            }
+            return nullptr;
         }
 
         [[nodiscard]] bool empty() const {
@@ -173,26 +206,28 @@ export namespace Std {
             std::shared_ptr<Node> m_Node;
 
         public:
-            explicit Iterator(const std::shared_ptr<Node>& node) : m_Node{node} {}
+            explicit Iterator(const std::shared_ptr<Node> &node) : m_Node{node} {
+            }
+
             Iterator() = default;
 
             operator bool() const {
                 return m_Node;
             }
 
-            T& operator*() {
+            T &operator*() {
                 return this->getValue();
             }
 
-            const T& operator*() const {
+            const T &operator*() const {
                 return this->getValue();
             }
 
-            T& getValue() {
+            T &getValue() {
                 return m_Node->getValue();
             }
 
-            const T& getValue() const {
+            const T &getValue() const {
                 return m_Node->getValue();
             }
 
@@ -212,19 +247,19 @@ export namespace Std {
                 return !(*this == other);
             }
 
-            operator T&() {
+            operator T &() {
                 return *m_Node->getPtr();
             }
 
-            operator const T&() const {
+            operator const T &() const {
                 return *m_Node->getPtr();
             }
 
-            operator std::shared_ptr<T>&() {
+            operator std::shared_ptr<T> &() {
                 return m_Node->getPtr();
             }
 
-            operator const std::shared_ptr<T>&() const {
+            operator const std::shared_ptr<T> &() const {
                 return m_Node->getPtr();
             }
 
@@ -272,8 +307,8 @@ export namespace Std {
         }
 
         void clear() {
-            m_Head = nullptr;
-            m_Tail = nullptr;
+            m_Head.reset();
+            m_Tail.reset();
             m_Size = 0;
         }
 
@@ -289,6 +324,10 @@ export namespace Std {
             for (const auto &value: list) {
                 insertBack(std::make_shared<T>(value));
             }
+        }
+
+        ~DLList() {
+            std::cout << "DLList destroyed" << std::endl;
         }
     };
 }
