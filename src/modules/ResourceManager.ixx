@@ -4,7 +4,7 @@ module;
 
 export module ResourceManager;
 
-import std.compat;
+import com.yrm.libcpp.std.compat;
 
 export namespace Std {
     template<typename T>

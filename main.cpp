@@ -1,53 +1,27 @@
-import std.compat;
-
-import ResourceManager;
-
-struct Int {
-    int value;
-
-    Int() : value{0} {
-        std::cout << "Creating Int with default value" << std::endl;
-    }
-
-    Int(int value) : value{value} {
-        std::cout << "Creating Int with value " << value << std::endl;
-    }
-
-    virtual void destroy() {
-        std::cout << "Destroying Int with value " << value << std::endl;
-    }
-
-    virtual bool isValid() const {
-        return true;
-    }
-
-};
-
-struct IntDerived : Int {
-public:
-    IntDerived() : Int{0} {
-        std::cout << "Creating IntDerived with default value" << std::endl;
-    }
-
-    IntDerived(int value) : Int{value} {
-        std::cout << "Creating IntDerived with value " << value << std::endl;
-    }
-
-    void destroy() override {
-        std::cout << "Destroying IntDerived with value " << value << std::endl;
-    }
-
-    bool isValid() const override {
-        return true;
-    }
-};
+import com.yrm.libcpp.std.compat;
+import com.yrm.container.DLList;
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Std::DLList<int> list{1, 2, 3, 4};
 
-    Std::VirtualUniqueHolder<Int> holder = Std::makeVirtualUniqueHolder<IntDerived>(0);
+    auto functions = Std::DLList<std::function<bool(int)>>{};
 
-    auto holder2 = std::move(holder);
+    functions.emplaceBack([](int a)-> bool { return a % 2 == 0; });
+    functions.emplaceBack([](int a)-> bool { return a % 3 == 0; });
+    functions.emplaceBack([](int a)-> bool { return a % 5 == 0; });
+
+    std::cout << std::endl;
+
+    for (int i = 0; i < 32; i++) {
+        bool result = false;
+        for (auto it = functions.begin(); it != functions.end(); ++it) {
+            result = (*it)(i);
+            if (result) {
+                break;
+            }
+        }
+        std::cout << i << ": " << result << std::endl;
+    }
 
     return 0;
 }
