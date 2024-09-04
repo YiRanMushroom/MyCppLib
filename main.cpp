@@ -1,10 +1,14 @@
 import com.yrm.libcpp.std.compat;
 import com.yrm.container.DLList;
+import com.yrm.util.StringLiteral;
 
-int main() {
+template<StringLiteral str>
+void print() {
+    std::cout << str.get() << std::endl;
+}
 
-    {
-        auto functions = Std::DLList<std::function<bool(int)>>{};
+int main() { {
+        auto functions = Std::DLList<std::function<bool(int)> >{};
 
         functions.emplaceBack([](int a)-> bool { return a % 2 == 0; });
         functions.emplaceBack([](int a)-> bool { return a % 3 == 0; });
@@ -30,6 +34,8 @@ int main() {
 
         std::cout << (*fun)(3) << std::endl;
     }
+
+    print<"">();
 
     return 0;
 }
